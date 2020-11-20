@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+
+    body, html, .container{
+        height: 100%;
+        overflow: hidden;
+    }
+
+    #boxMsj{
+        height: calc(100% - 100px);
+        overflow-y: auto;
+    }
+</style>
+
+<div id="chat" class="container">
+
+    <div id="boxMsj">
+        
+    </div>
+
+    <input type="text" name="" id="message" class="form-control mt-2">
+    <input type="submit" value="Enviar" id="bMessage" class="mt-1 btn btn-success">
+</div>
+
+<script>
+    window.onload = function () {
+
+        var user = "{{ request.user }}"
+
+        document.querySelector("#bMessage").addEventListener("click", sendMsj)
+        document.querySelector("#message").addEventListener("keypress", function (e) {
+            if (e.keyCode == 13) {
+                sendMsj()
+            }
+        })
+
+        function sendMsj() {
+            message = document.querySelector("#message")
+
+            if (message.value.trim() !== "") {
+                chatSocket.send(JSON.stringify({ 'message': message.value.trim() }))
+                message.value = ""
+            }
+        }
+
+        var url = 'ws://' + window.location.host + '/ws/chat/room/{{ room.id }}'
+        var chatSocket = new WebSocket(url)
+        chatSocket.onopen = function (e) {
+            //chatSocket.send(JSON.stringify({'message' : "Hola Mundo desde el cliente"}))
+            console.log("WS abierto")
+        }
+
+        chatSocket.onmessage = function (data) {
+
+            var data = JSON.parse(data.data)
+            var msj = data.message
+            var username = data.username
+            var datetime = data.datetime
+
+            var customClassMsj = "alert-success mr-5"
+            if (user != username){
+                customClassMsj = "alert-warning ml-5"
+            }
+
+            document.querySelector("#boxMsj").innerHTML += 
+            `<div class='alert ${customClassMsj}'>
+                ${msj}
+                <div>
+                    <small class="font-italic">
+                        ${username}
+                    </small>
+                    <small class="float-right">
+                        ${datetime}
+                    </small>
+                </div>
+            </div>
+            `
+     
+
+        }
+
+        chatSocket.onclose = function (e) {
+            console.log("Cerrada la conexión")
+        }
+
+
+    }
+</script>
+
+{% endblock %}
