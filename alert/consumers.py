@@ -4,16 +4,17 @@ from asgiref.sync import async_to_sync
 
 from django.utils import timezone, dateformat
 
+from .models import Alert
+
 class AlertConsumer(WebsocketConsumer):
 
     def connect(self):
-
         self.id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = 'chat_%s' % self.id
-        #self.user = self.scope['user']
+        self.user = self.scope['user']
 
         print("en el consumer")
-        print(self.scope['user'])
+        
 
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
@@ -36,6 +37,12 @@ class AlertConsumer(WebsocketConsumer):
 
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
+
+        alert = Alert()
+        alert.content = message
+        alert.user = self.user
+
+        alert.save()
         
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name,
@@ -43,7 +50,7 @@ class AlertConsumer(WebsocketConsumer):
                 'type' : 'chat_message',
                 'message' : message,
                 'username' : self.user.username,
-                'datetime' : dateformat.format(timezone.now(), 'Y-m-d H:i:s')
+                'datetime' : dateformat.format(alert.create_at, 'Y-m-d H:i:s')
             }
         )
 
