@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div id="boxMsj"></div>
+{% for a in alerts %}
+
+    <div class="card mt-2">
+        <div class="card-body">
+            <h5 class="my-0">{{ a.content }}</h5>
+
+            <p class="text-muted float-end my-0">{{a.user.username}}</p>
+            <p class="text-muted my-0">{{a.create_at}}</p>
+            
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+
+<script>
+    window.onload = function () {
+
+        var token = "{{ token }}"
+
+        var url = 'ws://' + window.location.host + '/ws/alert/room/3?'+token
+        var chatSocket = new WebSocket(url)
+        chatSocket.onopen = function (e) {
+            console.log("WS abierto")
+        }
+
+        chatSocket.onmessage = function (data) {
+
+            
+            var data = JSON.parse(data.data)
+            console.log(data)
+
+            document.querySelector("#boxMsj").innerHTML = 
+            `
+                <div class="card mt-2">
+                    <div class="card-body">
+                        <h5 class="my-0">${data.message}</h5>
+
+                        <p class="text-muted float-end my-0">${data.username}</p>
+                        <p class="text-muted my-0">${data.datetime}</p>
+                        
+                    </div>
+                </div>
+            ` + document.querySelector("#boxMsj").innerHTML
+     
+
+        }
+
+        chatSocket.onclose = function (e) {
+            console.log("Cerrada la conexión")
+        }
+
+
+    }
+</script>
+
+{% endblock %}
